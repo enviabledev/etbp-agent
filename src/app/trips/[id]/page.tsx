@@ -87,10 +87,27 @@ export default function TripManifestPage() {
                   <td className="px-5 py-3 font-medium">{p.passenger_name}</td>
                   <td className="px-5 py-3 text-sm text-gray-500">{p.phone || "—"}</td>
                   <td className="px-5 py-3 font-mono text-xs">{p.booking_ref}</td>
-                  <td className="px-5 py-3 text-sm capitalize">{p.payment_method || "—"}</td>
+                  <td className="px-5 py-3 text-sm">
+                    {p.payment_status === "paid" ? (
+                      <span className="text-green-600 font-medium capitalize">{p.payment_method || "Paid"}</span>
+                    ) : (
+                      <span className="text-red-600 font-medium">Unpaid (₦{p.amount_due?.toLocaleString()})</span>
+                    )}
+                  </td>
                   <td className="px-5 py-3">
                     {p.checked_in ? (
                       <span className="inline-flex items-center gap-1 text-green-600 text-sm font-medium">✓ Checked in</span>
+                    ) : p.payment_status !== "paid" ? (
+                      <button onClick={async () => {
+                        const method = prompt("Payment method? (cash / pos / transfer)");
+                        if (!method) return;
+                        try {
+                          await api.post(`/api/v1/agent/bookings/${p.booking_ref}/pay`, { payment_method: method });
+                          await load();
+                        } catch (err: any) { alert(err?.response?.data?.detail || "Payment failed"); }
+                      }} className="h-9 px-3 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600">
+                        Collect Payment
+                      </button>
                     ) : (
                       <button onClick={() => checkin(p.booking_id)} disabled={checkingIn === p.booking_id || ["departed","completed","cancelled"].includes(trip?.status)}
                         className="h-9 px-4 bg-[#0057FF] text-white text-sm font-medium rounded-lg hover:bg-[#0046CC] disabled:opacity-50">
