@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
 import api from "@/lib/api";
+import { triggerPushRefresh } from "@/lib/push-refresh";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAE_RgeeXP1j2xUvF7HxgwLTS7rcNl0rQk",
@@ -46,6 +47,10 @@ export async function initPushNotifications(appType: string = "customer") {
           body: payload.notification?.body || "",
           icon: "/icon.png",
         });
+      }
+      // Trigger data refresh for listening components
+      if (payload.data?.type) {
+        triggerPushRefresh(payload.data.type);
       }
     });
 
