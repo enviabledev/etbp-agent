@@ -112,7 +112,7 @@ export default function DashboardPage() {
                 <tr><td colSpan={6} className="text-center py-12 text-gray-400">No trips scheduled</td></tr>
               ) : trips.map((t: any) => (
                 <tr key={t.id} className={t.status === "boarding" ? "bg-green-50" : ""}>
-                  <td className="px-5 py-4 font-mono font-bold text-lg">{t.departure_time?.slice(0, 5)}</td>
+                  <td className="px-5 py-4"><span className="font-mono font-bold text-lg">{t.departure_time?.slice(0, 5)}</span><br/><span className="text-xs text-gray-400">{t.departure_date ? new Date(t.departure_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''}</span></td>
                   <td className="px-5 py-4"><p className="font-medium">{t.route_name}</p><p className="text-xs text-gray-500">→ {t.destination}</p></td>
                   <td className="px-5 py-4"><span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${statusColor(t.status)}`}>{t.status?.replace(/_/g, " ")}</span></td>
                   <td className="px-5 py-4 font-mono text-sm">{t.vehicle_plate || "—"}</td>
