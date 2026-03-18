@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
+import QRScanner from "@/components/agent/QRScanner";
 
 export default function TripManifestPage() {
   const { id } = useParams<{ id: string }>();
@@ -12,6 +13,7 @@ export default function TripManifestPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [checkingIn, setCheckingIn] = useState<string | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -61,6 +63,9 @@ export default function TripManifestPage() {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search passenger, ref, or seat..."
             className="w-full h-12 pl-4 pr-4 rounded-xl border border-gray-300 focus:border-[#0057FF] outline-none text-base" />
         </div>
+        <button onClick={() => setScannerOpen(true)} className="h-12 px-4 bg-green-600 text-white rounded-xl font-medium flex items-center gap-2 whitespace-nowrap mb-4">📷 Scan QR</button>
+        {trip?.status === "departed" && <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700 font-medium">🚌 This trip has departed — check-in is closed</div>}
+        {trip?.status === "completed" && <div className="mb-4 p-3 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-600 font-medium">✅ Trip completed</div>}
         <div className="bg-white rounded-xl border overflow-hidden">
           <table className="w-full">
             <thead className="bg-gray-50 border-b">
@@ -87,7 +92,7 @@ export default function TripManifestPage() {
                     {p.checked_in ? (
                       <span className="inline-flex items-center gap-1 text-green-600 text-sm font-medium">✓ Checked in</span>
                     ) : (
-                      <button onClick={() => checkin(p.booking_id)} disabled={checkingIn === p.booking_id}
+                      <button onClick={() => checkin(p.booking_id)} disabled={checkingIn === p.booking_id || ["departed","completed","cancelled"].includes(trip?.status)}
                         className="h-9 px-4 bg-[#0057FF] text-white text-sm font-medium rounded-lg hover:bg-[#0046CC] disabled:opacity-50">
                         {checkingIn === p.booking_id ? "..." : "Check in"}
                       </button>
@@ -99,6 +104,7 @@ export default function TripManifestPage() {
           </table>
         </div>
       </div>
+      <QRScanner open={scannerOpen} onClose={() => { setScannerOpen(false); load(); }} manifest={manifest} tripId={id} onCheckin={checkin} />
     </div>
   );
 }

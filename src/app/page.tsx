@@ -20,6 +20,15 @@ export default function DashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "b") { e.preventDefault(); router.push("/book"); }
+      if ((e.ctrlKey || e.metaKey) && e.key === "l") { e.preventDefault(); router.push("/lookup"); }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [router]);
+
   async function loadData() {
     try {
       const [profileRes, dashRes, tripsRes] = await Promise.all([
@@ -61,6 +70,7 @@ export default function DashboardPage() {
           </button>
           <button onClick={() => router.push("/lookup")} className="h-12 px-4 border border-gray-300 rounded-xl hover:bg-gray-50 text-sm font-medium">Lookup</button>
           <button onClick={() => router.push("/history")} className="h-12 px-4 border border-gray-300 rounded-xl hover:bg-gray-50 text-sm font-medium">History</button>
+          <button onClick={() => router.push("/shift-report")} className="h-12 px-4 border border-gray-300 rounded-xl hover:bg-gray-50 text-sm font-medium">Shift Report</button>
           <button onClick={async () => { const { logout } = await import("@/lib/auth"); await logout(); router.push("/login"); }}
             className="text-sm text-gray-500 hover:text-red-600">Logout</button>
         </div>
