@@ -1,25 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 
 export default function ShiftReportPage() {
   const router = useRouter();
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { load(); }, [date]);
-
-  async function load() {
+  const load = useCallback(async function () {
     setLoading(true);
     try {
       const res = await api.get("/api/v1/agent/shift-report", { params: { report_date: date } });
       setData(res.data);
-    } catch {}
+    } catch { /* ignore */ }
     setLoading(false);
-  }
+  }, [date]);
+
+  useEffect(() => { load(); }, [load]);
 
   return (
     <div className="min-h-screen bg-gray-50">

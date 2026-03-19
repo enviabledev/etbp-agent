@@ -9,7 +9,7 @@ export function onPushRefresh(listener: RefreshListener) {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function triggerPushRefresh(dataType: string) {
-  // For the agent portal, just trigger all listeners to reload their data
   listeners.forEach((fn) => fn());
 }
