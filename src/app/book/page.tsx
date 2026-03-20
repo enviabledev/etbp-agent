@@ -16,6 +16,12 @@ export default function BookPage() {
   const [searchingCust, setSearchingCust] = useState(false);
   const [custNotFound, setCustNotFound] = useState(false);
 
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpError, setOtpError] = useState("");
+
   const [trips, setTrips] = useState<any[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
   const [seats, setSeats] = useState<any[]>([]);
@@ -40,8 +46,32 @@ export default function BookPage() {
     try {
       const { data } = await api.post("/api/v1/agent/customers", newCust);
       setCustomer(data);
-      if (preselectedTrip) { await loadTrip(preselectedTrip); setStep("seats"); } else { await loadTrips(); setStep("trip"); }
+      await sendOtp(data);
     } catch (err: any) { alert(err?.response?.data?.detail || "Failed"); }
+  }
+
+  async function sendOtp(cust: any) {
+    setOtpSending(true); setOtpError(""); setOtpCode("");
+    try {
+      await api.post("/api/v1/agent/bookings/send-customer-otp", { customer_id: cust.id });
+      setShowOtpModal(true);
+    } catch (err: any) { setOtpError(err?.response?.data?.detail || "Failed to send OTP"); setShowOtpModal(true); }
+    finally { setOtpSending(false); }
+  }
+
+  async function verifyOtp() {
+    if (otpCode.length !== 6) { setOtpError("Enter a 6-digit code"); return; }
+    setOtpVerifying(true); setOtpError("");
+    try {
+      await api.post("/api/v1/agent/bookings/verify-customer-otp", { customer_id: customer.id, otp: otpCode });
+      setShowOtpModal(false);
+      proceedAfterCustomer();
+    } catch (err: any) { setOtpError(err?.response?.data?.detail || "Invalid OTP. Please try again."); }
+    finally { setOtpVerifying(false); }
+  }
+
+  function proceedAfterCustomer() {
+    if (preselectedTrip) { loadTrip(preselectedTrip); setStep("seats"); } else { loadTrips(); setStep("trip"); }
   }
 
   async function loadTrips() { try { const { data } = await api.get("/api/v1/agent/trips"); setTrips(data.items || []); } catch {} }
@@ -103,8 +133,9 @@ export default function BookPage() {
               <div className="p-4 bg-green-50 rounded-lg mb-4">
                 <p className="font-medium">{customer.first_name} {customer.last_name}</p>
                 <p className="text-sm text-gray-600">{customer.phone}</p>
-                <button onClick={() => { if (preselectedTrip) { loadTrip(preselectedTrip); setStep("seats"); } else { loadTrips(); setStep("trip"); } }}
-                  className="mt-3 h-10 px-4 bg-[#0057FF] text-white text-sm rounded-lg font-medium">Continue</button>
+                <button onClick={() => sendOtp(customer)} disabled={otpSending}
+                  className="mt-3 h-10 px-4 bg-[#0057FF] text-white text-sm rounded-lg font-medium disabled:opacity-50">
+                  {otpSending ? "Sending OTP..." : "Continue"}</button>
               </div>
             )}
             {custNotFound && (
@@ -180,6 +211,39 @@ export default function BookPage() {
           </div>
         )}
       </div>
+
+      {/* OTP Verification Modal */}
+      {showOtpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-lg font-bold mb-2">Verify Customer</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Enter the 6-digit OTP sent to {customer?.phone}
+            </p>
+            <input
+              value={otpCode}
+              onChange={e => { setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setOtpError(""); }}
+              placeholder="000000"
+              maxLength={6}
+              className="w-full h-14 px-4 rounded-xl border text-center text-2xl font-mono tracking-[0.5em] outline-none focus:border-[#0057FF] mb-3"
+              autoFocus
+            />
+            {otpError && <p className="text-sm text-red-600 mb-3">{otpError}</p>}
+            <div className="flex gap-3">
+              <button onClick={() => { setShowOtpModal(false); setOtpCode(""); setOtpError(""); }}
+                className="flex-1 h-12 border rounded-xl font-medium">Cancel</button>
+              <button onClick={verifyOtp} disabled={otpVerifying || otpCode.length !== 6}
+                className="flex-1 h-12 bg-[#0057FF] text-white rounded-xl font-medium disabled:opacity-50">
+                {otpVerifying ? "Verifying..." : "Verify"}
+              </button>
+            </div>
+            <button onClick={() => sendOtp(customer)} disabled={otpSending}
+              className="w-full mt-3 text-sm text-[#0057FF] font-medium disabled:opacity-50">
+              {otpSending ? "Sending..." : "Resend OTP"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
