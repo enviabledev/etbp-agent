@@ -24,6 +24,26 @@ export default function ShiftReportPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          body { background: white !important; -webkit-print-color-adjust: exact; }
+          .no-print { display: none !important; }
+          .print-area { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+          .print-area * { border-radius: 0 !important; box-shadow: none !important; }
+          .print-area .bg-white { background: white !important; }
+          .print-area .bg-gray-50 { background: #f9f9f9 !important; }
+          .print-area table { width: 100% !important; border-collapse: collapse !important; font-size: 11px !important; }
+          .print-area th, .print-area td { padding: 4px 8px !important; border-bottom: 1px solid #ddd !important; text-align: left !important; }
+          .print-area th { background: #f3f3f3 !important; font-weight: bold !important; }
+          .print-area .grid { display: flex !important; flex-wrap: wrap !important; gap: 0 !important; }
+          .print-area .grid > div { flex: 1 !important; min-width: 0 !important; border: 1px solid #ddd !important; padding: 8px !important; text-align: center !important; }
+          .print-area .rounded-xl { border: 1px solid #ddd !important; }
+          .print-area .text-2xl { font-size: 18px !important; }
+          .print-header { display: block !important; }
+          @page { margin: 15mm; size: A4; }
+        }
+      `}</style>
       <div className="bg-white border-b px-6 py-4 flex items-center gap-4 no-print">
         <button onClick={() => router.push("/")} className="p-2 hover:bg-gray-100 rounded-lg text-xl">←</button>
         <h1 className="text-lg font-bold">Shift Report</h1>
@@ -35,10 +55,12 @@ export default function ShiftReportPage() {
         <div className="flex items-center justify-center py-20"><div className="animate-spin h-8 w-8 border-4 border-[#0057FF] border-t-transparent rounded-full" /></div>
       ) : data ? (
         <div className="max-w-4xl mx-auto px-6 py-6 print-area">
-          {/* Print header */}
-          <div className="text-center mb-6 hidden print:block">
-            <p className="font-bold text-lg">ENVIABLE TRANSPORT — SHIFT REPORT</p>
-            <p className="text-sm">{data.agent_name} | {date}</p>
+          {/* Print header — visible only when printing */}
+          <div className="text-center mb-6 print-header" style={{ display: "none" }}>
+            <p className="font-bold text-xl">ENVIABLE TRANSPORT</p>
+            <p className="font-bold text-lg">SHIFT REPORT</p>
+            <p className="text-sm mt-1">{data.agent_name} | {date}</p>
+            <hr className="mt-3" />
           </div>
 
           {/* Stats */}
