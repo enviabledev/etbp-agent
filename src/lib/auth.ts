@@ -15,6 +15,13 @@ export async function logout() {
   Cookies.remove("agent_refresh_token");
 }
 
+export async function loginWithToken(email: string, code: string) {
+  const { data } = await api.post("/api/v1/agent/verify-token", { email, code });
+  Cookies.set("agent_access_token", data.access_token, { expires: 1 });
+  Cookies.set("agent_refresh_token", data.refresh_token, { expires: 30 });
+  return data;
+}
+
 export function isAuthenticated() {
   return !!Cookies.get("agent_access_token");
 }
