@@ -80,19 +80,25 @@ export default function TripManifestPage() {
                 <th className="text-left text-xs font-semibold text-gray-500 uppercase px-5 py-3">Passenger</th>
                 <th className="text-left text-xs font-semibold text-gray-500 uppercase px-5 py-3">Phone</th>
                 <th className="text-left text-xs font-semibold text-gray-500 uppercase px-5 py-3">Ref</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase px-5 py-3">Luggage</th>
                 <th className="text-left text-xs font-semibold text-gray-500 uppercase px-5 py-3">Payment</th>
                 <th className="text-left text-xs font-semibold text-gray-500 uppercase px-5 py-3">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {filtered.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-8 text-gray-400">No passengers</td></tr>
+                <tr><td colSpan={7} className="text-center py-8 text-gray-400">No passengers</td></tr>
               ) : filtered.map((p: any) => (
                 <tr key={`${p.booking_id}-${p.seat_number}`} className={p.checked_in ? "bg-green-50" : ""}>
                   <td className="px-5 py-3 font-bold">{p.seat_number || "—"}</td>
                   <td className="px-5 py-3 font-medium">{p.passenger_name}</td>
                   <td className="px-5 py-3 text-sm text-gray-500">{p.phone || "—"}</td>
                   <td className="px-5 py-3 font-mono text-xs">{p.booking_ref}</td>
+                  <td className="px-5 py-3 text-sm">
+                    {(p.extra_luggage ?? 0) > 0 ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">🧳 ×{p.extra_luggage}</span>
+                    ) : <span className="text-gray-300">—</span>}
+                  </td>
                   <td className="px-5 py-3 text-sm">
                     {p.payment_status === "paid" ? (
                       <span className="text-green-600 font-medium capitalize">{p.payment_method || "Paid"}</span>
