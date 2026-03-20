@@ -14,6 +14,10 @@ export default function TripManifestPage() {
   const [search, setSearch] = useState("");
   const [checkingIn, setCheckingIn] = useState<string | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [payingBooking, setPayingBooking] = useState<{ ref: string; amount: number } | null>(null);
+  const [payMethod, setPayMethod] = useState("cash");
+  const [payProcessing, setPayProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -34,8 +38,10 @@ export default function TripManifestPage() {
     try {
       await api.post(`/api/v1/agent/trips/${id}/checkin/${bookingId}`);
       await load();
-    } catch (err: any) {
-      alert(err?.response?.data?.detail || "Check-in failed");
+    } catch (err: unknown) {
+      const msg = (err as Record<string, Record<string, Record<string, string>>>)?.response?.data?.detail || "Check-in failed";
+      setError(msg);
+      setTimeout(() => setError(null), 5000);
     } finally { setCheckingIn(null); }
   }
 
@@ -98,14 +104,8 @@ export default function TripManifestPage() {
                     {p.checked_in ? (
                       <span className="inline-flex items-center gap-1 text-green-600 text-sm font-medium">✓ Checked in</span>
                     ) : p.payment_status !== "paid" ? (
-                      <button onClick={async () => {
-                        const method = prompt("Payment method? (cash / pos / transfer)");
-                        if (!method) return;
-                        try {
-                          await api.post(`/api/v1/agent/bookings/${p.booking_ref}/pay`, { payment_method: method });
-                          await load();
-                        } catch (err: any) { alert(err?.response?.data?.detail || "Payment failed"); }
-                      }} className="h-9 px-3 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600">
+                      <button onClick={() => setPayingBooking({ ref: p.booking_ref, amount: p.amount_due || 0 })}
+                        className="h-9 px-3 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600">
                         Collect Payment
                       </button>
                     ) : (
@@ -122,6 +122,52 @@ export default function TripManifestPage() {
         </div>
       </div>
       <QRScanner open={scannerOpen} onClose={() => { setScannerOpen(false); load(); }} manifest={manifest} tripId={id} onCheckin={checkin} />
+
+      {/* Error banner */}
+      {error && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded-xl shadow-lg text-sm font-medium">
+          {error}
+        </div>
+      )}
+
+      {/* Payment modal */}
+      {payingBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setPayingBooking(null)} />
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6">
+            <h3 className="text-lg font-semibold mb-2">Collect Payment</h3>
+            <p className="text-sm text-gray-500 mb-4">Booking {payingBooking.ref} — ₦{payingBooking.amount?.toLocaleString()}</p>
+            <div className="flex gap-2 mb-4">
+              {["cash", "pos", "transfer"].map(m => (
+                <button key={m} onClick={() => setPayMethod(m)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium border ${payMethod === m ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 text-gray-600"}`}>
+                  {m.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setPayingBooking(null)} className="flex-1 py-2 border rounded-lg text-sm">Cancel</button>
+              <button
+                disabled={payProcessing}
+                onClick={async () => {
+                  setPayProcessing(true);
+                  try {
+                    await api.post(`/api/v1/agent/bookings/${payingBooking.ref}/pay`, { payment_method: payMethod });
+                    setPayingBooking(null);
+                    await load();
+                  } catch (err: unknown) {
+                    const msg = (err as Record<string, Record<string, Record<string, string>>>)?.response?.data?.detail || "Payment failed";
+                    setError(msg);
+                    setTimeout(() => setError(null), 5000);
+                  } finally { setPayProcessing(false); }
+                }}
+                className="flex-1 py-2 bg-green-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+                {payProcessing ? "Processing..." : "Confirm Payment"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
