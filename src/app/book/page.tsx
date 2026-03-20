@@ -21,6 +21,7 @@ export default function BookPage() {
   const [otpSending, setOtpSending] = useState(false);
   const [otpVerifying, setOtpVerifying] = useState(false);
   const [otpError, setOtpError] = useState("");
+  const [pageError, setPageError] = useState("");
 
   const [trips, setTrips] = useState<any[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
@@ -47,7 +48,7 @@ export default function BookPage() {
       const { data } = await api.post("/api/v1/agent/customers", newCust);
       setCustomer(data);
       await sendOtp(data);
-    } catch (err: any) { alert(err?.response?.data?.detail || "Failed"); }
+    } catch (err: unknown) { const msg = (err as Record<string, Record<string, Record<string, string>>>)?.response?.data?.detail || "Failed to create customer"; setPageError(msg); setTimeout(() => setPageError(""), 5000); }
   }
 
   async function sendOtp(cust: any) {
@@ -93,7 +94,7 @@ export default function BookPage() {
         payment_method: paymentMethod, payment_reference: paymentRef || undefined,
       });
       setBookingRef(data.reference);
-    } catch (err: any) { alert(err?.response?.data?.detail || "Booking failed"); }
+    } catch (err: unknown) { const msg = (err as Record<string, Record<string, Record<string, string>>>)?.response?.data?.detail || "Booking failed"; setPageError(msg); setTimeout(() => setPageError(""), 5000); }
     finally { setSubmitting(false); }
   }
 
@@ -114,6 +115,7 @@ export default function BookPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {pageError && <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded-xl shadow-lg text-sm font-medium">{pageError}</div>}
       <div className="bg-white border-b px-6 py-4 flex items-center gap-4">
         <button onClick={() => router.push("/")} className="p-2 hover:bg-gray-100 rounded-lg text-xl">←</button>
         <h1 className="text-lg font-bold">New Booking</h1>
